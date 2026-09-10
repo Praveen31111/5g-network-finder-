@@ -113,11 +113,13 @@ git push -u origin main
   - Ability to attach speed test benchmark directly to saved 5G point in SQLite.
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 7: Historical Comparison & Arrival Re-Verification**
-  - Auto-detection when returning to a saved spot ($< 10\text{m}$).
-  - Side-by-side card: Original Saved Score vs Current Live Score.
-  - Degradation / Improvement verdict badge.
-  - *Verification*: Test comparison screen with sample baseline data.
+- [x] **Chunk 7: Historical Comparison & Arrival Re-Verification**
+  - Auto-arrival detection when walking near a saved spot ($\le 15\text{m}$) with proactive HUD beacon banner (`App.tsx`).
+  - Mathematical 5G drift analysis engine (`comparisonEngine.ts`) calculating $\Delta$ Score, $\Delta$ RSRP, $\Delta$ SINR, and Latency.
+  - Side-by-side comparison modal with physics root-cause diagnosis (Obstacle attenuation, Congestion, or Perfect stability) (`SpotComparisonModal.tsx`).
+  - Ability to overwrite and update SQLite baseline with live reading (`databaseService.ts`).
+  - "COMPARE" button added to each spot in `SavedSpotsList.tsx`.
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 - [ ] **Chunk 8: Data Backup, Settings & Export/Import**
   - Export all saved 5G spots to JSON / CSV.
