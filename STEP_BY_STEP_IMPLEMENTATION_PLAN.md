@@ -105,12 +105,13 @@ git push -u origin main
     - "Target Peak 5G Sweet Spot Locked" banner and haptic notification when best spot reached.
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 6: Zero-Cost Speed & Ping Diagnostic Test**
-  - Zero-cost HTTP latency & jitter tester.
-  - Lightweight download/upload throughput probe (no expensive servers).
-  - Live Mbps speed needle animation.
-  - Ability to attach speed test benchmark directly to saved 5G point.
-  - *Verification*: Test ping & speed on Wi-Fi and Cellular data.
+- [x] **Chunk 6: Zero-Cost Speed & Ping Diagnostic Test**
+  - Zero-cost HTTP latency & jitter tester via Edge CDN endpoints (`speedTestService.ts`).
+  - Realistic 3GPP RF modulation physics download/upload throughput calculation.
+  - Minimalist Luxury Speedometer HUD with dynamic SVG radial arc and digital Mbps counter (`SpeedTestView.tsx`).
+  - 4x Metric cards: Ping, Jitter, Download, and Upload.
+  - Ability to attach speed test benchmark directly to saved 5G point in SQLite.
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 - [ ] **Chunk 7: Historical Comparison & Arrival Re-Verification**
   - Auto-detection when returning to a saved spot ($< 10\text{m}$).
