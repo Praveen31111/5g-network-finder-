@@ -80,31 +80,70 @@ export function calculateRelativeHeading(
   return (targetBearing - compassHeading + 360) % 360;
 }
 
+export type DistanceUnit = 'metric' | 'inches_cm';
+
 /**
- * Distance ko human-friendly format me convert karta hai (Centimeters, Meters, Kilometers)
+ * Distance ko Inches, Centimeters, Feet, aur Meters me convert karta hai
  */
-export function formatPrecisionDistance(meters: number): {
+export function formatPrecisionDistance(
+  meters: number,
+  unitMode: DistanceUnit = 'inches_cm'
+): {
   value: string;
   unit: string;
+  secondaryText?: string;
   isCloseRange: boolean;
   isCentimeterRange: boolean;
+  isInchRange: boolean;
 } {
-  if (meters < 1) {
-    // 1 meter se kam par centimeters dikhate hain!
+  // Agar user ne Inches/CM mode select kiya ho aur distance 1 meter se kam ho
+  if (unitMode === 'inches_cm' && meters < 1) {
+    const totalInches = Math.max(Math.round(meters * 39.3701), 2);
     const cm = Math.max(Math.round(meters * 100), 5);
+
+    return {
+      value: `${totalInches}`,
+      unit: 'in',
+      secondaryText: `${cm} cm`,
+      isCloseRange: true,
+      isCentimeterRange: true,
+      isInchRange: true,
+    };
+  }
+
+  // 1 meter se 3 meter ke beech (Feet & Meters display)
+  if (unitMode === 'inches_cm' && meters < 3) {
+    const feet = (meters * 3.28084).toFixed(1);
+    return {
+      value: feet,
+      unit: 'ft',
+      secondaryText: `${meters.toFixed(1)} m`,
+      isCloseRange: true,
+      isCentimeterRange: false,
+      isInchRange: false,
+    };
+  }
+
+  // Standard Metric formatting
+  if (meters < 1) {
+    const cm = Math.max(Math.round(meters * 100), 5);
+    const inches = Math.round(cm / 2.54);
     return {
       value: `${cm}`,
       unit: 'cm',
+      secondaryText: `${inches} in`,
       isCloseRange: true,
       isCentimeterRange: true,
+      isInchRange: false,
     };
   } else if (meters < 10) {
-    // 10 meter se kam par exact 1 decimal point meter
     return {
       value: meters.toFixed(1),
       unit: 'm',
+      secondaryText: `${(meters * 3.28084).toFixed(1)} ft`,
       isCloseRange: true,
       isCentimeterRange: false,
+      isInchRange: false,
     };
   } else if (meters < 1000) {
     return {
@@ -112,14 +151,58 @@ export function formatPrecisionDistance(meters: number): {
       unit: 'm',
       isCloseRange: false,
       isCentimeterRange: false,
+      isInchRange: false,
     };
   } else {
-    // 1 km se zyada par kilometers
     return {
       value: (meters / 1000).toFixed(2),
       unit: 'km',
       isCloseRange: false,
       isCentimeterRange: false,
+      isInchRange: false,
     };
   }
+}
+
+/**
+ * 3D Spatial Arm Wave Sweep result structure
+ */
+export interface SpatialSweepResult {
+  displacementInches: number;
+  displacementCm: number;
+  directionLabel: string;
+  isPeakDetected: boolean;
+  recommendation: string;
+}
+
+/**
+ * Khade hokar hath se phone 4-10 inch hilane par spatial signal evaluation karta hai
+ */
+export function evaluateSpatialSweep(
+  accelMagnitude: number,
+  deltaRsrp: number,
+  currentRsrp: number
+): SpatialSweepResult {
+  // Accelerometer movement magnitude to approximate inches (4 to 12 inches)
+  const displacementCm = Math.min(Math.max(Math.round(accelMagnitude * 20), 4), 30);
+  const displacementInches = Math.max(Math.round(displacementCm / 2.54), 2);
+
+  const isPeak = currentRsrp >= -80 || deltaRsrp >= 3;
+
+  let recommendation = '';
+  if (deltaRsrp >= 2) {
+    recommendation = `Aapke aage ${displacementInches} inch (${displacementCm} cm) par signal best hai (+${deltaRsrp} dBm)!`;
+  } else if (deltaRsrp <= -2) {
+    recommendation = `Aage ${displacementInches} inch par signal weak hai (${deltaRsrp} dBm). Peeche hato.`;
+  } else {
+    recommendation = `Is ${displacementInches}-inch zone me signal steady hai. Window ki taraf 4 inch badhao.`;
+  }
+
+  return {
+    displacementInches,
+    displacementCm,
+    directionLabel: deltaRsrp >= 0 ? 'FORWARD (WINDOW)' : 'BACKWARD (NOISY)',
+    isPeakDetected: isPeak,
+    recommendation,
+  };
 }

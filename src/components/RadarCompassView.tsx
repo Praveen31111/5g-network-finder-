@@ -1,7 +1,7 @@
 // ==============================================================================
 // File: src/components/RadarCompassView.tsx
-// Purpose: Real-Time Radar Compass, Centimeter Distance Finder & Geiger Counter HUD
-// Uses Magnetometer, Accelerometer micro-movement, and dynamic signal gradient vector.
+// Purpose: Real-Time Radar Compass, Centimeter & Inch Distance Finder & Spatial Sweep HUD
+// Uses Magnetometer, Accelerometer micro-movement, and 3D Spatial Wave Scanner.
 // Har line par detailed comment diya gaya hai.
 // ==============================================================================
 
@@ -25,6 +25,8 @@ import {
   ArrowDown,
   ChevronRight,
   ShieldCheck,
+  Move,
+  Ruler,
 } from 'lucide-react-native';
 import { NetworkPoint, GeoCoordinates, LiveTelemetryState } from '../types/telephony';
 import {
@@ -32,6 +34,8 @@ import {
   calculateBearing,
   calculateRelativeHeading,
   formatPrecisionDistance,
+  evaluateSpatialSweep,
+  DistanceUnit,
 } from '../core/navigationEngine';
 import {
   subscribeToCompass,
@@ -66,11 +70,14 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
   // Compass Heading state (0° - 360°)
   const [compassHeading, setCompassHeading] = useState<number>(0);
 
+  // Unit display mode preference ('inches_cm' default for micro-inch tracking, or 'metric')
+  const [unitMode, setUnitMode] = useState<DistanceUnit>('inches_cm');
+
   // Haptic feedback toggle state (enabled by default)
   const [isHapticEnabled, setIsHapticEnabled] = useState<boolean>(true);
 
   // Micro-meter motion detection pulse state
-  const [microStepCount, setMicroStepCount] = useState<number>(0);
+  const [lastMotionMagnitude, setLastMotionMagnitude] = useState<number>(0.15);
 
   // Signal Delta comparison state (Pichle scan ke mukable signal better hua ya worse)
   const [signalDelta, setSignalDelta] = useState<number>(0);
@@ -99,10 +106,10 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
     return () => compassSub.unsubscribe();
   }, []);
 
-  // Micro-motion accelerometer listener (centimeter steps detection)
+  // Micro-motion accelerometer listener (inch/centimeter arm sweep detection)
   useEffect(() => {
-    const motionSub = subscribeToMicroMotion(() => {
-      setMicroStepCount((prev) => prev + 1);
+    const motionSub = subscribeToMicroMotion((magnitude) => {
+      setLastMotionMagnitude(magnitude);
 
       // Agar user move kar raha hai aur haptic on hai, light click trigger karte hain
       if (isHapticEnabled) {
@@ -155,8 +162,15 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
     relativeAngle = calculateRelativeHeading(targetBearing, compassHeading);
   }
 
-  // Precision distance formatting (e.g. "45 cm" ya "2.4 m")
-  const distanceInfo = formatPrecisionDistance(distanceMeters);
+  // Precision distance formatting (Inches / CM / Feet / Meters)
+  const distanceInfo = formatPrecisionDistance(distanceMeters, unitMode);
+
+  // 3D Spatial Arm Wave evaluation (Khade hokar 4-10 inch hath hilane par)
+  const spatialSweep = evaluateSpatialSweep(
+    lastMotionMagnitude,
+    signalDelta,
+    telemetry.rawMetrics.rsrpDbm
+  );
 
   // Sweet spot locked condition: Distance <= 1 meter YA score >= 92
   const isSweetSpotLocked =
@@ -177,7 +191,7 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-      {/* 1. Header Bar */}
+      {/* 1. Header Bar with Unit Switcher & Haptic Button */}
       <View style={styles.topHeader}>
         <View style={styles.headerLeft}>
           <View style={styles.iconCircle}>
@@ -186,23 +200,40 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
           <View>
             <Text style={styles.headerTitle}>5G VECTOR RADAR</Text>
             <Text style={styles.headerSubtitle}>
-              MICRO-METER & CENTIMETER SWEEP
+              INCH, CM & SPATIAL SWEEP
             </Text>
           </View>
         </View>
 
-        {/* Sound / Haptic Geiger Toggle Button */}
-        <TouchableOpacity
-          style={[styles.hapticToggle, isHapticEnabled && styles.hapticToggleActive]}
-          onPress={() => setIsHapticEnabled(!isHapticEnabled)}
-          activeOpacity={0.7}
-        >
-          {isHapticEnabled ? (
-            <Volume2 size={16} color="#10B981" />
-          ) : (
-            <VolumeX size={16} color="#64748B" />
-          )}
-        </TouchableOpacity>
+        {/* Unit Mode & Haptic Action Cluster */}
+        <View style={styles.headerActions}>
+          {/* Unit Toggle Pill (INCH/CM vs METRIC) */}
+          <TouchableOpacity
+            style={styles.unitToggle}
+            onPress={() =>
+              setUnitMode(unitMode === 'inches_cm' ? 'metric' : 'inches_cm')
+            }
+            activeOpacity={0.7}
+          >
+            <Ruler size={13} color="#10B981" />
+            <Text style={styles.unitToggleText}>
+              {unitMode === 'inches_cm' ? 'INCH / CM' : 'METERS'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Sound / Haptic Geiger Toggle Button */}
+          <TouchableOpacity
+            style={[styles.hapticToggle, isHapticEnabled && styles.hapticToggleActive]}
+            onPress={() => setIsHapticEnabled(!isHapticEnabled)}
+            activeOpacity={0.7}
+          >
+            {isHapticEnabled ? (
+              <Volume2 size={16} color="#10B981" />
+            ) : (
+              <VolumeX size={16} color="#64748B" />
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* 2. Sweet Spot Locked Alert Banner */}
@@ -220,7 +251,32 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
         </View>
       )}
 
-      {/* 3. Signal Gradient Vector (Hot / Cold Indicator) */}
+      {/* 3. Instant 3D Spatial Wave Scanner (Arm Motion Detector) */}
+      <View style={styles.spatialCard}>
+        <View style={styles.spatialCardHeader}>
+          <View style={styles.spatialTitleCluster}>
+            <Move size={14} color="#10B981" />
+            <Text style={styles.spatialTitle}>3D SPATIAL WAVE SCANNER</Text>
+          </View>
+          <View style={styles.displacementChip}>
+            <Text style={styles.displacementText}>
+              {spatialSweep.displacementInches} IN ({spatialSweep.displacementCm} CM)
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.spatialRecommendation}>
+          {spatialSweep.recommendation}
+        </Text>
+
+        <View style={styles.spatialFooter}>
+          <Text style={styles.spatialHint}>
+            Gently wave your phone 4-6 inches forward or towards the window.
+          </Text>
+        </View>
+      </View>
+
+      {/* 4. Signal Gradient Vector (Hot / Cold Indicator) */}
       <View
         style={[
           styles.gradientBanner,
@@ -252,12 +308,12 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
           {signalDelta > 0
             ? 'Keep moving this way!'
             : signalDelta < 0
-            ? 'Step back 50 cm'
+            ? 'Step back 4 inches'
             : 'Hold position'}
         </Text>
       </View>
 
-      {/* 4. Central Circular Radar Compass HUD */}
+      {/* 5. Central Circular Radar Compass HUD */}
       <View style={styles.radarContainer}>
         {/* SVG Radar Grid & Directional Needle */}
         <View style={styles.radarGraphicWrapper}>
@@ -344,10 +400,17 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
             </Svg>
           </View>
 
-          {/* Center Distance & Centimeter Readout */}
+          {/* Center Distance Readout with Dual Unit Support */}
           <View style={styles.centerDistanceBadge}>
-            <Text style={styles.centerDistanceValue}>{distanceInfo.value}</Text>
-            <Text style={styles.centerDistanceUnit}>{distanceInfo.unit}</Text>
+            <View style={styles.distanceValueRow}>
+              <Text style={styles.centerDistanceValue}>{distanceInfo.value}</Text>
+              <Text style={styles.centerDistanceUnit}>{distanceInfo.unit}</Text>
+            </View>
+            {distanceInfo.secondaryText && (
+              <Text style={styles.centerDistanceSecondary}>
+                {distanceInfo.secondaryText}
+              </Text>
+            )}
           </View>
         </View>
 
@@ -360,13 +423,13 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
           <View style={styles.azimuthPill}>
             <Target size={12} color="#10B981" />
             <Text style={styles.azimuthText}>
-              TARGET BEARING: {Math.round(targetBearing)}°
+              BEARING: {Math.round(targetBearing)}°
             </Text>
           </View>
         </View>
       </View>
 
-      {/* 5. Target Spot Information Card */}
+      {/* 6. Target Spot Information Card */}
       {currentTarget ? (
         <View style={styles.targetCard}>
           <View style={styles.targetCardTop}>
@@ -399,10 +462,10 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
           {/* Micro-metrics comparisons */}
           <View style={styles.targetMetricsRow}>
             <Text style={styles.metricText}>
-              Benchmark RSRP: {currentTarget.rsrpDbm} dBm
+              Benchmark: {currentTarget.rsrpDbm} dBm
             </Text>
             <Text style={styles.metricText}>
-              Live RSRP: {telemetry.rawMetrics.rsrpDbm} dBm
+              Live: {telemetry.rawMetrics.rsrpDbm} dBm
             </Text>
           </View>
         </View>
@@ -415,7 +478,7 @@ export const RadarCompassView: React.FC<RadarCompassViewProps> = ({
         </View>
       )}
 
-      {/* 6. Switch Tracked Spot Carousel */}
+      {/* 7. Switch Tracked Spot Carousel */}
       {savedPoints.length > 1 && (
         <View style={styles.switchContainer}>
           <Text style={styles.switchHeader}>SWITCH TARGET SPOT</Text>
@@ -500,10 +563,32 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginTop: 1,
   },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  unitToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  unitToggleText: {
+    color: '#10B981',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
   hapticToggle: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 8,
     backgroundColor: '#0F1523',
     alignItems: 'center',
     justifyContent: 'center',
@@ -539,6 +624,58 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginTop: 2,
     lineHeight: 14,
+  },
+  spatialCard: {
+    backgroundColor: '#0F1523',
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+    marginBottom: 12,
+  },
+  spatialCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  spatialTitleCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  spatialTitle: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  displacementChip: {
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  displacementText: {
+    color: '#10B981',
+    fontSize: 9,
+    fontWeight: '800',
+  },
+  spatialRecommendation: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '700',
+    lineHeight: 18,
+    marginBottom: 6,
+  },
+  spatialFooter: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.05)',
+    paddingTop: 6,
+  },
+  spatialHint: {
+    color: '#64748B',
+    fontSize: 10,
   },
   gradientBanner: {
     flexDirection: 'row',
@@ -612,6 +749,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  distanceValueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+  },
   centerDistanceValue: {
     color: '#FFFFFF',
     fontSize: 32,
@@ -623,6 +764,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
+    marginLeft: 4,
+  },
+  centerDistanceSecondary: {
+    color: '#64748B',
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 1,
   },
   azimuthRow: {
     flexDirection: 'row',
