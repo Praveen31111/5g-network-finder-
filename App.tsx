@@ -55,6 +55,7 @@ import { SaveSpotModal } from './src/components/SaveSpotModal';
 import { SavedSpotsList } from './src/components/SavedSpotsList';
 import { CoverageMap } from './src/components/CoverageMap';
 import { RadarCompassView } from './src/components/RadarCompassView';
+import { SpeedTestView } from './src/components/SpeedTestView';
 import { BottomNavBar, AppTab } from './src/components/BottomNavBar';
 
 export default function App() {
@@ -341,7 +342,7 @@ export default function App() {
           </View>
         )}
 
-        {/* View 2: Interactive 5G Coverage Map */}
+        {/* View 3: Interactive 5G Coverage Map */}
         {activeTab === 'map' && (
           <View style={styles.mapContainer}>
             <CoverageMap
@@ -353,7 +354,18 @@ export default function App() {
           </View>
         )}
 
-        {/* View 3: Saved Spots Modal Sheet / Drawer */}
+        {/* View 4: Zero-Cost 5G Speed & Ping Diagnostic Test */}
+        {activeTab === 'speed' && (
+          <View style={styles.speedContainer}>
+            <SpeedTestView
+              telemetry={telemetry}
+              savedSpots={savedPoints}
+              onRefreshSpots={loadSavedPoints}
+            />
+          </View>
+        )}
+
+        {/* View 5: Saved Spots Modal Sheet / Drawer */}
         <SavedSpotsList
           visible={isSavedListOpen || activeTab === 'spots'}
           points={savedPoints}
@@ -417,6 +429,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   radarContainer: {
+    flex: 1,
+  },
+  speedContainer: {
     flex: 1,
   },
   sectionHeaderRow: {

@@ -7,9 +7,9 @@
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { Gauge, Navigation, Map, Bookmark } from 'lucide-react-native';
+import { Gauge, Navigation, Map, Zap, Bookmark } from 'lucide-react-native';
 
-export type AppTab = 'hud' | 'radar' | 'map' | 'spots';
+export type AppTab = 'hud' | 'radar' | 'map' | 'speed' | 'spots';
 
 interface BottomNavBarProps {
   // Currently active tab
@@ -35,7 +35,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           activeOpacity={0.7}
         >
           <Gauge
-            size={17}
+            size={16}
             color={activeTab === 'hud' ? '#10B981' : '#64748B'}
             strokeWidth={activeTab === 'hud' ? 2.5 : 2}
           />
@@ -53,7 +53,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           activeOpacity={0.7}
         >
           <Navigation
-            size={17}
+            size={16}
             color={activeTab === 'radar' ? '#10B981' : '#64748B'}
             strokeWidth={activeTab === 'radar' ? 2.5 : 2}
           />
@@ -71,7 +71,7 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           activeOpacity={0.7}
         >
           <Map
-            size={17}
+            size={16}
             color={activeTab === 'map' ? '#10B981' : '#64748B'}
             strokeWidth={activeTab === 'map' ? 2.5 : 2}
           />
@@ -82,7 +82,25 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
           </Text>
         </TouchableOpacity>
 
-        {/* Tab 3: Saved Spots */}
+        {/* Tab 4: 5G Speed & Diagnostic */}
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'speed' && styles.tabActive]}
+          onPress={() => onSelectTab('speed')}
+          activeOpacity={0.7}
+        >
+          <Zap
+            size={16}
+            color={activeTab === 'speed' ? '#10B981' : '#64748B'}
+            strokeWidth={activeTab === 'speed' ? 2.5 : 2}
+          />
+          <Text
+            style={[styles.tabText, activeTab === 'speed' && styles.tabTextActive]}
+          >
+            SPEED
+          </Text>
+        </TouchableOpacity>
+
+        {/* Tab 5: Saved Spots */}
         <TouchableOpacity
           style={[styles.tab, activeTab === 'spots' && styles.tabActive]}
           onPress={() => onSelectTab('spots')}

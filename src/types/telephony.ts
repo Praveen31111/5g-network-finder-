@@ -146,6 +146,46 @@ export interface NetworkPoint {
   coordinates: GeoCoordinates;
   // Ping latency in ms
   latencyMs: number;
+  // Optional Download benchmark speed in Mbps
+  downloadMbps?: number;
+  // Optional Upload benchmark speed in Mbps
+  uploadMbps?: number;
   // Epoch timestamp in ms
   createdAt: number;
 }
+
+/**
+ * Speed Test execution phases
+ */
+export type SpeedTestPhase =
+  | 'idle'
+  | 'pinging'
+  | 'downloading'
+  | 'uploading'
+  | 'complete'
+  | 'error';
+
+/**
+ * Diagnostic result of a Speed & Latency Test
+ */
+export interface SpeedTestResult {
+  // Round trip latency in milliseconds (ms)
+  pingMs: number;
+  // Jitter (latency variance) in milliseconds (ms)
+  jitterMs: number;
+  // Download speed in Megabits per second (Mbps)
+  downloadMbps: number;
+  // Upload speed in Megabits per second (Mbps)
+  uploadMbps: number;
+  // Packet loss percentage (0 - 100%)
+  packetLossPercent: number;
+  // Current active phase
+  phase: SpeedTestPhase;
+  // Human-friendly performance rating
+  rating: string;
+  // Plain language verdict
+  verdict: string;
+  // Timestamp when test completed
+  completedAt?: number;
+}
+

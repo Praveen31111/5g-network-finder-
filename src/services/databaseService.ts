@@ -43,9 +43,19 @@ export async function getDatabase(): Promise<SQLite.SQLiteDatabase> {
       altitude REAL,
       accuracy REAL,
       latency_ms REAL NOT NULL,
+      download_mbps REAL,
+      upload_mbps REAL,
       created_at INTEGER NOT NULL
     );
   `);
+
+  // Safe backward compatibility migrations for existing SQLite databases
+  try {
+    await dbInstance.execAsync(`ALTER TABLE network_points ADD COLUMN download_mbps REAL;`);
+  } catch {}
+  try {
+    await dbInstance.execAsync(`ALTER TABLE network_points ADD COLUMN upload_mbps REAL;`);
+  } catch {}
 
   return dbInstance;
 }
@@ -60,8 +70,8 @@ export async function insertNetworkPoint(point: NetworkPoint): Promise<void> {
     `INSERT INTO network_points (
       id, title, notes, operator, generation, rsrp_dbm, sinr_db, rsrq_db,
       score, quality_level, color_hex, latitude, longitude, altitude, accuracy,
-      latency_ms, created_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      latency_ms, download_mbps, upload_mbps, created_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
     [
       point.id,
       point.title,
@@ -79,6 +89,8 @@ export async function insertNetworkPoint(point: NetworkPoint): Promise<void> {
       point.coordinates.altitude ?? null,
       point.coordinates.accuracy ?? null,
       point.latencyMs,
+      point.downloadMbps ?? null,
+      point.uploadMbps ?? null,
       point.createdAt,
     ]
   );
@@ -113,6 +125,8 @@ export async function fetchAllNetworkPoints(): Promise<NetworkPoint[]> {
       accuracy: row.accuracy,
     },
     latencyMs: row.latency_ms,
+    downloadMbps: row.download_mbps ?? undefined,
+    uploadMbps: row.upload_mbps ?? undefined,
     createdAt: row.created_at,
   }));
 }
@@ -123,6 +137,21 @@ export async function fetchAllNetworkPoints(): Promise<NetworkPoint[]> {
 export async function deleteNetworkPoint(id: string): Promise<void> {
   const db = await getDatabase();
   await db.runAsync(`DELETE FROM network_points WHERE id = ?;`, [id]);
+}
+
+/**
+ * Saved 5G spot par speed test benchmark metrics attach karta hai
+ */
+export async function updateSpotSpeedBenchmark(
+  id: string,
+  downloadMbps: number,
+  uploadMbps: number
+): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE network_points SET download_mbps = ?, upload_mbps = ? WHERE id = ?;`,
+    [downloadMbps, uploadMbps, id]
+  );
 }
 
 /**
@@ -156,6 +185,9 @@ export async function fetchBest5GPoint(): Promise<NetworkPoint | null> {
       accuracy: row.accuracy,
     },
     latencyMs: row.latency_ms,
+    downloadMbps: row.download_mbps ?? undefined,
+    uploadMbps: row.upload_mbps ?? undefined,
     createdAt: row.created_at,
   };
 }
+

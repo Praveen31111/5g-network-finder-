@@ -154,6 +154,15 @@ export const SavedSpotsList: React.FC<SavedSpotsListProps> = ({
                     <View style={styles.metricItem}>
                       <Text style={styles.metricItemText}>{item.latencyMs} ms</Text>
                     </View>
+
+                    {item.downloadMbps ? (
+                      <View style={[styles.metricItem, { backgroundColor: 'rgba(6, 182, 212, 0.15)' }]}>
+                        <Zap size={11} color="#06B6D4" />
+                        <Text style={[styles.metricItemText, { color: '#06B6D4', fontWeight: '800' }]}>
+                          {item.downloadMbps} Mbps
+                        </Text>
+                      </View>
+                    ) : null}
                   </View>
 
                   {/* Card Bottom: Coordinates, Date, and Delete Button */}
