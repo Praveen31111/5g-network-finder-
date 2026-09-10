@@ -1,0 +1,36 @@
+# ==============================================================================
+# 5G Network Finder & Coverage Radar - Git Ignore Configuration
+# ==============================================================================
+# Yeh file Git ko batati hai ki kaun-kaun se files aur folders ko GitHub par
+# push nahi karna hai (jaise heavy node_modules ya temporary build files).
+# ==============================================================================
+
+# Node.js dependencies (Yeh folder bada hota hai, npm install se dobara ban jata hai)
+node_modules/
+
+# Expo temporary cache aur runtime folders
+.expo/
+dist/
+web-build/
+
+# Native build outputs (Agar future mein EAS build ya local build run ho)
+android/
+ios/
+*.orig.*
+
+# Environment variables aur sensitive secret files (API keys, credentials)
+.env
+.env.local
+.env.*.local
+
+# npm/yarn log files aur debug errors
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Operating System temporary files
+.DS_Store
+Thumbs.db
+
+# TypeScript compilation output
+*.tsbuildinfo
