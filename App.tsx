@@ -13,13 +13,15 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   StyleSheet,
   View,
-  SafeAreaView,
   ScrollView,
   StatusBar,
   ActivityIndicator,
   Text,
   Alert,
 } from 'react-native';
+
+// Professional notch/island-safe layout provider
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Telemetry types import kar rahe hain
 import { LiveTelemetryState } from './src/types/telephony';
@@ -86,11 +88,13 @@ export default function App() {
   // Jab tak initial telemetry data load nahi hota, sleek dark screen loader dikhate hain
   if (!telemetry) {
     return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#090D14" />
-        <ActivityIndicator size="large" color="#10B981" />
-        <Text style={styles.loadingText}>CALIBRATING 5G RADIO TELEMETRY...</Text>
-      </SafeAreaView>
+      <SafeAreaProvider>
+        <SafeAreaView style={styles.loadingContainer}>
+          <StatusBar barStyle="light-content" backgroundColor="#090D14" />
+          <ActivityIndicator size="large" color="#10B981" />
+          <Text style={styles.loadingText}>CALIBRATING 5G RADIO TELEMETRY...</Text>
+        </SafeAreaView>
+      </SafeAreaProvider>
     );
   }
 
@@ -119,9 +123,10 @@ export default function App() {
   const latencyStatus = telemetry.latencyMs <= 30 ? 'Ultra Low' : telemetry.latencyMs <= 60 ? 'Fast' : 'High';
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      {/* Top Mobile Status Bar */}
-      <StatusBar barStyle="light-content" backgroundColor="#090D14" />
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+        {/* Top Mobile Status Bar */}
+        <StatusBar barStyle="light-content" backgroundColor="#090D14" />
 
       {/* Main Scrollable View */}
       <ScrollView
@@ -214,7 +219,8 @@ export default function App() {
           onSaveSpot={handleSaveSpot}
         />
       </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
