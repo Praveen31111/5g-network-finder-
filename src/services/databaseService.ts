@@ -155,6 +155,47 @@ export async function updateSpotSpeedBenchmark(
 }
 
 /**
+ * Saved 5G spot ko live re-verification metrics ke sath update karta hai
+ */
+export async function updateSpotBenchmarkMetrics(
+  id: string,
+  metrics: {
+    rsrpDbm: number;
+    sinrDb: number;
+    rsrqDb: number;
+    score: number;
+    qualityLevel: string;
+    colorHex: string;
+    latencyMs: number;
+  }
+): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(
+    `UPDATE network_points SET
+      rsrp_dbm = ?,
+      sinr_db = ?,
+      rsrq_db = ?,
+      score = ?,
+      quality_level = ?,
+      color_hex = ?,
+      latency_ms = ?,
+      created_at = ?
+    WHERE id = ?;`,
+    [
+      metrics.rsrpDbm,
+      metrics.sinrDb,
+      metrics.rsrqDb,
+      metrics.score,
+      metrics.qualityLevel,
+      metrics.colorHex,
+      metrics.latencyMs,
+      Date.now(),
+      id,
+    ]
+  );
+}
+
+/**
  * Highest 5G score wala best spot retrieve karta hai
  */
 export async function fetchBest5GPoint(): Promise<NetworkPoint | null> {

@@ -19,10 +19,13 @@ import {
   ActivityIndicator,
   Text,
   Alert,
+  TouchableOpacity,
 } from 'react-native';
 
 // Professional notch/island-safe layout provider
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
+import { MapPin, Activity, ArrowRight } from 'lucide-react-native';
 
 // Telemetry types import kar rahe hain
 import {
@@ -37,11 +40,15 @@ import { fetchCurrentTelemetry } from './src/services/telemetryService';
 // GPS Location service import karte hain
 import { getCurrentCoordinates } from './src/services/locationService';
 
+// Trigonometric distance calculator import karte hain
+import { calculateHaversineDistance } from './src/core/navigationEngine';
+
 // SQLite database service functions import karte hain
 import {
   fetchAllNetworkPoints,
   insertNetworkPoint,
   deleteNetworkPoint,
+  updateSpotBenchmarkMetrics,
 } from './src/services/databaseService';
 
 // Handcrafted minimalist UI components import karte hain
@@ -56,6 +63,7 @@ import { SavedSpotsList } from './src/components/SavedSpotsList';
 import { CoverageMap } from './src/components/CoverageMap';
 import { RadarCompassView } from './src/components/RadarCompassView';
 import { SpeedTestView } from './src/components/SpeedTestView';
+import { SpotComparisonModal } from './src/components/SpotComparisonModal';
 import { BottomNavBar, AppTab } from './src/components/BottomNavBar';
 
 export default function App() {
@@ -85,6 +93,36 @@ export default function App() {
 
   // Target 5G spot jise Compass Radar trace kar raha hai
   const [selectedRadarTarget, setSelectedRadarTarget] = useState<NetworkPoint | null>(null);
+
+  // Re-verification aur Historical Comparison modal state
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState<boolean>(false);
+  const [comparisonSpot, setComparisonSpot] = useState<NetworkPoint | null>(null);
+
+  // Nearest spot detection (< 15 meters auto-arrival beacon)
+  const nearbySpotInfo = React.useMemo(() => {
+    if (!userLocation || savedPoints.length === 0) return null;
+
+    let closestSpot: NetworkPoint | null = null;
+    let minDistance = Infinity;
+
+    for (const pt of savedPoints) {
+      const dist = calculateHaversineDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        pt.coordinates.latitude,
+        pt.coordinates.longitude
+      );
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestSpot = pt;
+      }
+    }
+
+    if (closestSpot && minDistance <= 15) {
+      return { spot: closestSpot, distanceMeters: minDistance };
+    }
+    return null;
+  }, [userLocation, savedPoints]);
 
   // SQLite database se saved points load karne ka function
   const loadSavedPoints = useCallback(async () => {
@@ -192,6 +230,31 @@ export default function App() {
     }
   };
 
+  // Saved 5G spot ka benchmark live reading se overwrite karne ka handler
+  const handleUpdateBenchmark = async (spotId: string) => {
+    if (!telemetry) return;
+    try {
+      await updateSpotBenchmarkMetrics(spotId, {
+        rsrpDbm: telemetry.rawMetrics.rsrpDbm,
+        sinrDb: telemetry.rawMetrics.sinrDb,
+        rsrqDb: telemetry.rawMetrics.rsrqDb,
+        score: telemetry.scoreReport.score,
+        qualityLevel: telemetry.scoreReport.qualityLevel,
+        colorHex: telemetry.scoreReport.colorHex,
+        latencyMs: telemetry.latencyMs,
+      });
+      await loadSavedPoints();
+      setIsComparisonModalOpen(false);
+      Alert.alert(
+        '5G Benchmark Updated!',
+        'New RF radio baseline and health score have been safely recorded in SQLite.'
+      );
+    } catch (e) {
+      console.error('Failed to update benchmark:', e);
+      Alert.alert('Update Failed', 'Could not update local database.');
+    }
+  };
+
   // Map ya Saved List se radar navigation ke liye point select hone par
   const handleSelectTargetForRadar = (point: NetworkPoint) => {
     setSelectedRadarTarget(point);
@@ -255,6 +318,31 @@ export default function App() {
               selectedOperator={selectedOperator}
               onSelectOperator={(op) => setSelectedOperator(op)}
             />
+
+            {/* Proactive Arrival Re-Verification Banner */}
+            {nearbySpotInfo && (
+              <TouchableOpacity
+                style={styles.arrivalBanner}
+                onPress={() => {
+                  setComparisonSpot(nearbySpotInfo.spot);
+                  setIsComparisonModalOpen(true);
+                }}
+                activeOpacity={0.8}
+              >
+                <View style={styles.arrivalBannerLeft}>
+                  <View style={styles.arrivalPulseDot} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.arrivalBannerTitle}>
+                      ARRIVED AT "{nearbySpotInfo.spot.title.toUpperCase()}" ({Math.round(nearbySpotInfo.distanceMeters)}M)
+                    </Text>
+                    <Text style={styles.arrivalBannerSub}>
+                      Original 5G: {nearbySpotInfo.spot.score}/100 • Tap to compare drift
+                    </Text>
+                  </View>
+                </View>
+                <ArrowRight size={15} color="#10B981" />
+              </TouchableOpacity>
+            )}
 
             {/* Instrument-Grade Radial 5G Health Score Gauge */}
             <ScoreGauge
@@ -374,6 +462,20 @@ export default function App() {
             if (activeTab === 'spots') setActiveTab('hud');
           }}
           onDeletePoint={handleDeletePoint}
+          onComparePoint={(point) => {
+            setComparisonSpot(point);
+            setIsComparisonModalOpen(true);
+          }}
+        />
+
+        {/* 5G Historical Comparison & Re-Verification Modal */}
+        <SpotComparisonModal
+          visible={isComparisonModalOpen}
+          spot={comparisonSpot}
+          liveTelemetry={telemetry}
+          distanceMeters={nearbySpotInfo?.distanceMeters}
+          onClose={() => setIsComparisonModalOpen(false)}
+          onUpdateBenchmark={handleUpdateBenchmark}
         />
 
         {/* Save Spot Modal Sheet */}
@@ -458,5 +560,40 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  arrivalBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F1523',
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.35)',
+    marginBottom: 12,
+  },
+  arrivalBannerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  arrivalPulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#10B981',
+  },
+  arrivalBannerTitle: {
+    color: '#10B981',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  arrivalBannerSub: {
+    color: '#94A3B8',
+    fontSize: 11,
+    marginTop: 2,
   },
 });

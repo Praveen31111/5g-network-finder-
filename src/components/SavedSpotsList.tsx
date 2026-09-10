@@ -35,6 +35,8 @@ interface SavedSpotsListProps {
   onClose: () => void;
   // Spot delete karne ka callback
   onDeletePoint: (id: string) => Promise<void>;
+  // Spot ko live signal se compare karne ka callback
+  onComparePoint?: (point: NetworkPoint) => void;
 }
 
 export const SavedSpotsList: React.FC<SavedSpotsListProps> = ({
@@ -42,6 +44,7 @@ export const SavedSpotsList: React.FC<SavedSpotsListProps> = ({
   points,
   onClose,
   onDeletePoint,
+  onComparePoint,
 }) => {
   // Spot delete confirmation alert
   const confirmDelete = (point: NetworkPoint) => {
@@ -181,14 +184,27 @@ export const SavedSpotsList: React.FC<SavedSpotsListProps> = ({
                       </View>
                     </View>
 
-                    {/* Delete button */}
-                    <TouchableOpacity
-                      onPress={() => confirmDelete(item)}
-                      style={styles.deleteButton}
-                      activeOpacity={0.7}
-                    >
-                      <Trash2 size={15} color="#EF4444" />
-                    </TouchableOpacity>
+                    {/* Action Group: Compare & Delete */}
+                    <View style={styles.actionGroup}>
+                      {onComparePoint && (
+                        <TouchableOpacity
+                          onPress={() => onComparePoint(item)}
+                          style={styles.compareButton}
+                          activeOpacity={0.7}
+                        >
+                          <Activity size={12} color="#10B981" />
+                          <Text style={styles.compareButtonText}>COMPARE</Text>
+                        </TouchableOpacity>
+                      )}
+
+                      <TouchableOpacity
+                        onPress={() => confirmDelete(item)}
+                        style={styles.deleteButton}
+                        activeOpacity={0.7}
+                      >
+                        <Trash2 size={15} color="#EF4444" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
               )}
@@ -383,6 +399,28 @@ const styles = StyleSheet.create({
   metaText: {
     color: '#64748B',
     fontSize: 10,
+  },
+  actionGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  compareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.25)',
+  },
+  compareButtonText: {
+    color: '#10B981',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
   deleteButton: {
     padding: 6,
