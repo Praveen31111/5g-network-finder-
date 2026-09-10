@@ -6,15 +6,23 @@
 // ==============================================================================
 
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
 import { Radio } from 'lucide-react-native';
 
 interface HeaderProps {
   // Kya currently network scan/refresh chal raha hai
   isScanning: boolean;
+  // Saved spots count
+  savedCount?: number;
+  // Open saved spots modal callback
+  onOpenSaved?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ isScanning }) => {
+export const Header: React.FC<HeaderProps> = ({
+  isScanning,
+  savedCount = 0,
+  onOpenSaved,
+}) => {
   return (
     <View style={styles.container}>
       {/* Brand title aur icon ka horizontal cluster */}
@@ -30,13 +38,29 @@ export const Header: React.FC<HeaderProps> = ({ isScanning }) => {
         </View>
       </View>
 
-      {/* Live status badge with pulsating green beacon */}
-      <View style={styles.statusPill}>
-        {/* Green pulse dot indicator */}
-        <View style={[styles.beaconDot, isScanning && styles.beaconDotScanning]} />
-        <Text style={styles.statusPillText}>
-          {isScanning ? 'POLLING...' : 'LIVE SENSORS'}
-        </Text>
+      {/* Right side cluster: Live beacon + Saved Spots Button */}
+      <View style={styles.rightCluster}>
+        {onOpenSaved && (
+          <TouchableOpacity
+            style={styles.savedButton}
+            onPress={onOpenSaved}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.savedButtonText}>SPOTS</Text>
+            <View style={styles.savedCountBadge}>
+              <Text style={styles.savedCountBadgeText}>{savedCount}</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+
+        {/* Live status badge with pulsating green beacon */}
+        <View style={styles.statusPill}>
+          {/* Green pulse dot indicator */}
+          <View style={[styles.beaconDot, isScanning && styles.beaconDotScanning]} />
+          <Text style={styles.statusPillText}>
+            {isScanning ? 'POLL' : 'LIVE'}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -80,6 +104,39 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     marginTop: 1,
+  },
+  rightCluster: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  savedButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1E293B',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  savedButtonText: {
+    color: '#94A3B8',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  savedCountBadge: {
+    backgroundColor: 'rgba(16, 185, 129, 0.20)',
+    paddingHorizontal: 4,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  savedCountBadgeText: {
+    color: '#10B981',
+    fontSize: 8,
+    fontWeight: '900',
   },
   statusPill: {
     flexDirection: 'row',

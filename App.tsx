@@ -3,6 +3,7 @@
 // Purpose: 5G Network Finder & Coverage Radar - Minimalist Modern HUD Dashboard
 // Crafted with 20-year veteran design principles:
 // Restraint, high-contrast typography, obsidian palette, and instant signal clarity.
+// Chunk 3: SQLite Offline Database Persistence & Live GPS Point Saving integrated.
 // Har line par detailed comment diya gaya hai.
 // ==============================================================================
 
@@ -24,18 +25,31 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 // Telemetry types import kar rahe hain
-import { LiveTelemetryState } from './src/types/telephony';
+import {
+  LiveTelemetryState,
+  NetworkPoint,
+  GeoCoordinates,
+} from './src/types/telephony';
 
 // Telemetry service se live signal provider import karte hain
 import { fetchCurrentTelemetry } from './src/services/telemetryService';
 
-// Chunk 2 ke handcrafted minimalist components import karte hain
+// SQLite database service functions import karte hain
+import {
+  fetchAllNetworkPoints,
+  insertNetworkPoint,
+  deleteNetworkPoint,
+} from './src/services/databaseService';
+
+// Handcrafted minimalist UI components import karte hain
 import { Header } from './src/components/Header';
 import { OperatorSelector } from './src/components/OperatorSelector';
 import { ScoreGauge } from './src/components/ScoreGauge';
 import { MetricCard } from './src/components/MetricCard';
 import { HardwareStrip } from './src/components/HardwareStrip';
 import { ActionBar } from './src/components/ActionBar';
+import { SaveSpotModal } from './src/components/SaveSpotModal';
+import { SavedSpotsList } from './src/components/SavedSpotsList';
 
 export default function App() {
   // Live telemetry state
@@ -46,6 +60,25 @@ export default function App() {
 
   // Active selected operator ('Jio True 5G', 'Airtel 5G Plus', 'Vi 5G')
   const [selectedOperator, setSelectedOperator] = useState<string>('Jio True 5G');
+
+  // SQLite me saved network points state
+  const [savedPoints, setSavedPoints] = useState<NetworkPoint[]>([]);
+
+  // "Save 5G Spot" modal sheet open/close state
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState<boolean>(false);
+
+  // "Saved Spots" list drawer open/close state
+  const [isSavedListOpen, setIsSavedListOpen] = useState<boolean>(false);
+
+  // SQLite database se saved points load karne ka function
+  const loadSavedPoints = useCallback(async () => {
+    try {
+      const points = await fetchAllNetworkPoints();
+      setSavedPoints(points);
+    } catch (error) {
+      console.error('Failed to load saved points from SQLite:', error);
+    }
+  }, []);
 
   // Network telemetry scan karne ka function
   const scanNetwork = useCallback(async (operator = selectedOperator) => {
@@ -61,9 +94,12 @@ export default function App() {
     }
   }, [selectedOperator]);
 
-  // Initial load aur 3-second live auto-polling effect
+  // Initial load: Telemetry scan, SQLite load, aur 3-second auto-polling loop
   useEffect(() => {
-    // Initial fetch
+    // Database initialize & saved spots load
+    loadSavedPoints();
+
+    // Initial signal fetch
     scanNetwork(selectedOperator);
 
     // Har 3 second mein auto-polling timer set karte hain
@@ -73,16 +109,58 @@ export default function App() {
 
     // Memory leak rokne ke liye timer cleanup karte hain
     return () => clearInterval(pollInterval);
-  }, [selectedOperator, scanNetwork]);
+  }, [selectedOperator, scanNetwork, loadSavedPoints]);
 
-  // Spot save button click handler (Chunk 3 preparation)
-  const handleSaveSpot = () => {
+  // Naya 5G Spot SQLite database me save karne ka handler
+  const handleConfirmSave = async (
+    title: string,
+    notes: string,
+    coords: GeoCoordinates
+  ) => {
     if (!telemetry) return;
-    Alert.alert(
-      '5G Spot Radar',
-      `Current 5G Score: ${telemetry.scoreReport.score}/100\nOperator: ${telemetry.operatorName}\n\nChunk 3 mein is spot ko GPS coordinates aur SQLite database mein save kiya jayega!`,
-      [{ text: 'Great!', style: 'default' }]
-    );
+
+    // Unique 5G network point model create karte hain
+    const newPoint: NetworkPoint = {
+      id: `spot_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      title,
+      notes: notes || undefined,
+      operator: telemetry.operatorName,
+      generation: telemetry.generation,
+      rsrpDbm: telemetry.rawMetrics.rsrpDbm,
+      sinrDb: telemetry.rawMetrics.sinrDb,
+      rsrqDb: telemetry.rawMetrics.rsrqDb,
+      score: telemetry.scoreReport.score,
+      qualityLevel: telemetry.scoreReport.qualityLevel,
+      colorHex: telemetry.scoreReport.colorHex,
+      coordinates: coords,
+      latencyMs: telemetry.latencyMs,
+      createdAt: Date.now(),
+    };
+
+    try {
+      // SQLite database me insert karte hain
+      await insertNetworkPoint(newPoint);
+      // Saved points state reload karte hain
+      await loadSavedPoints();
+
+      Alert.alert(
+        '5G Spot Saved!',
+        `"${title}" has been safely bookmarked in your offline radar database. Score: ${newPoint.score}/100.`
+      );
+    } catch (error) {
+      console.error('Failed to save 5G spot to SQLite:', error);
+      Alert.alert('Save Failed', 'Could not write to local database. Please try again.');
+    }
+  };
+
+  // Kisi saved 5G spot ko delete karne ka handler
+  const handleDeletePoint = async (id: string) => {
+    try {
+      await deleteNetworkPoint(id);
+      await loadSavedPoints();
+    } catch (error) {
+      console.error('Failed to delete 5G spot:', error);
+    }
   };
 
   // Jab tak initial telemetry data load nahi hota, sleek dark screen loader dikhate hain
@@ -128,97 +206,117 @@ export default function App() {
         {/* Top Mobile Status Bar */}
         <StatusBar barStyle="light-content" backgroundColor="#090D14" />
 
-      {/* Main Scrollable View */}
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* 1. Header Bar with live beacon */}
-        <Header isScanning={isScanning} />
-
-        {/* 2. Modern Segmented Operator Selector */}
-        <OperatorSelector
-          selectedOperator={selectedOperator}
-          onSelectOperator={(op) => setSelectedOperator(op)}
-        />
-
-        {/* 3. Instrument-Grade Radial 5G Health Score Gauge */}
-        <ScoreGauge
-          report={scoreReport}
-          generation={telemetry.generation}
-        />
-
-        {/* 4. Section Label: Precision RF Metrics */}
-        <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionTitle}>RADIO FREQUENCY TELEMETRY</Text>
-          <Text style={styles.sectionSubtitle}>3GPP CALIBRATED</Text>
-        </View>
-
-        {/* 5. 2x2 Telemetry Metric Cards with Visual Progress Tracks */}
-        <View style={styles.metricsGrid}>
-          {/* Card 1: RSRP */}
-          <MetricCard
-            acronym="RSRP"
-            label="Signal Power"
-            value={rawMetrics.rsrpDbm}
-            unit="dBm"
-            percentage={rsrpPercent}
-            statusText={rsrpStatus}
-            accentColor={rsrpColor}
-            benchmarkHint="Benchmark: > -80 dBm"
+        {/* Main Scrollable View */}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* 1. Header Bar with live beacon & saved spots count button */}
+          <Header
+            isScanning={isScanning}
+            savedCount={savedPoints.length}
+            onOpenSaved={() => setIsSavedListOpen(true)}
           />
 
-          {/* Card 2: SINR */}
-          <MetricCard
-            acronym="SINR"
-            label="Clarity & Noise"
-            value={rawMetrics.sinrDb}
-            unit="dB"
-            percentage={sinrPercent}
-            statusText={sinrStatus}
-            accentColor={sinrColor}
-            benchmarkHint="Benchmark: > 20 dB"
+          {/* 2. Modern Segmented Operator Selector */}
+          <OperatorSelector
+            selectedOperator={selectedOperator}
+            onSelectOperator={(op) => setSelectedOperator(op)}
           />
 
-          {/* Card 3: RSRQ */}
-          <MetricCard
-            acronym="RSRQ"
-            label="Signal Quality"
-            value={rawMetrics.rsrqDb}
-            unit="dB"
-            percentage={rsrqPercent}
-            statusText={rsrqStatus}
-            accentColor={rsrqColor}
-            benchmarkHint="Benchmark: > -10 dB"
+          {/* 3. Instrument-Grade Radial 5G Health Score Gauge */}
+          <ScoreGauge
+            report={scoreReport}
+            generation={telemetry.generation}
           />
 
-          {/* Card 4: Ping */}
-          <MetricCard
-            acronym="PING"
-            label="HTTP Latency"
-            value={telemetry.latencyMs}
-            unit="ms"
-            percentage={latencyPercent}
-            statusText={latencyStatus}
-            accentColor={latencyColor}
-            benchmarkHint="Benchmark: < 30 ms"
-          />
-        </View>
+          {/* 4. Section Label: Precision RF Metrics */}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={styles.sectionTitle}>RADIO FREQUENCY TELEMETRY</Text>
+            <Text style={styles.sectionSubtitle}>3GPP CALIBRATED</Text>
+          </View>
 
-        {/* 6. Hardware Ribbon: Band n78, Cell ID, 5G SA */}
-        <HardwareStrip
-          frequencyBand={telemetry.frequencyBand}
-          cellId={telemetry.cellId}
-          generation={telemetry.generation}
+          {/* 5. 2x2 Telemetry Metric Cards with Visual Progress Tracks */}
+          <View style={styles.metricsGrid}>
+            {/* Card 1: RSRP */}
+            <MetricCard
+              acronym="RSRP"
+              label="Signal Power"
+              value={rawMetrics.rsrpDbm}
+              unit="dBm"
+              percentage={rsrpPercent}
+              statusText={rsrpStatus}
+              accentColor={rsrpColor}
+              benchmarkHint="Benchmark: > -80 dBm"
+            />
+
+            {/* Card 2: SINR */}
+            <MetricCard
+              acronym="SINR"
+              label="Clarity & Noise"
+              value={rawMetrics.sinrDb}
+              unit="dB"
+              percentage={sinrPercent}
+              statusText={sinrStatus}
+              accentColor={sinrColor}
+              benchmarkHint="Benchmark: > 20 dB"
+            />
+
+            {/* Card 3: RSRQ */}
+            <MetricCard
+              acronym="RSRQ"
+              label="Signal Quality"
+              value={rawMetrics.rsrqDb}
+              unit="dB"
+              percentage={rsrqPercent}
+              statusText={rsrqStatus}
+              accentColor={rsrqColor}
+              benchmarkHint="Benchmark: > -10 dB"
+            />
+
+            {/* Card 4: Ping */}
+            <MetricCard
+              acronym="PING"
+              label="HTTP Latency"
+              value={telemetry.latencyMs}
+              unit="ms"
+              percentage={latencyPercent}
+              statusText={latencyStatus}
+              accentColor={latencyColor}
+              benchmarkHint="Benchmark: < 30 ms"
+            />
+          </View>
+
+          {/* 6. Hardware Ribbon: Band n78, Cell ID, 5G SA */}
+          <HardwareStrip
+            frequencyBand={telemetry.frequencyBand}
+            cellId={telemetry.cellId}
+            generation={telemetry.generation}
+          />
+
+          {/* 7. Ergonomic Floating Action Bar */}
+          <ActionBar
+            isScanning={isScanning}
+            onScan={() => scanNetwork(selectedOperator)}
+            onSaveSpot={() => setIsSaveModalOpen(true)}
+          />
+        </ScrollView>
+
+        {/* 8. Save Spot Modal Sheet */}
+        <SaveSpotModal
+          visible={isSaveModalOpen}
+          telemetry={telemetry}
+          onClose={() => setIsSaveModalOpen(false)}
+          onSave={handleConfirmSave}
         />
 
-        {/* 7. Ergonomic Floating Action Bar */}
-        <ActionBar
-          isScanning={isScanning}
-          onScan={() => scanNetwork(selectedOperator)}
-          onSaveSpot={handleSaveSpot}
+        {/* 9. Saved 5G Spots List Drawer */}
+        <SavedSpotsList
+          visible={isSavedListOpen}
+          points={savedPoints}
+          onClose={() => setIsSavedListOpen(false)}
+          onDeletePoint={handleDeletePoint}
         />
-      </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
   );

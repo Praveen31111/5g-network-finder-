@@ -101,3 +101,51 @@ export interface LiveTelemetryState {
   // Kya yeh reading hardware chip se aayi hai ya simulator mode se
   isSimulated: boolean;
 }
+
+/**
+ * GPS Geographic Coordinates
+ */
+export interface GeoCoordinates {
+  // Latitude decimal degrees
+  latitude: number;
+  // Longitude decimal degrees
+  longitude: number;
+  // Altitude in meters above sea level
+  altitude?: number | null;
+  // Accuracy radius in meters
+  accuracy?: number | null;
+}
+
+/**
+ * Saved 5G Network Spot Data Model (Stored in SQLite)
+ */
+export interface NetworkPoint {
+  // Unique UUID identifier
+  id: string;
+  // User-defined title (e.g., "Balcony Window Spot")
+  title: string;
+  // User notes or benchmark context
+  notes?: string;
+  // Operator name (e.g. Jio True 5G)
+  operator: string;
+  // Network architecture (e.g. 5G SA)
+  generation: string;
+  // Captured RSRP dBm
+  rsrpDbm: number;
+  // Captured SINR dB
+  sinrDb: number;
+  // Captured RSRQ dB
+  rsrqDb: number;
+  // Final 0-100 Score
+  score: number;
+  // Health badge: EXCELLENT, GOOD, AVERAGE, WEAK, POOR
+  qualityLevel: SignalQualityLevel;
+  // Color hex code for UI badges
+  colorHex: string;
+  // Exact GPS Coordinates
+  coordinates: GeoCoordinates;
+  // Ping latency in ms
+  latencyMs: number;
+  // Epoch timestamp in ms
+  createdAt: number;
+}

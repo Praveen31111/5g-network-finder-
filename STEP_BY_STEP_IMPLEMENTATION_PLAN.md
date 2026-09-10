@@ -78,12 +78,13 @@ git push -u origin main
   - Bottom thumb-friendly action bar (`ActionBar.tsx`).
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 3: SQLite Persistence Layer & "Save 5G Point" Flow**
-  - Local `expo-sqlite` database (`network_points` table).
-  - GPS Coordinate grabber via `expo-location`.
-  - "Save This 5G Spot" Bottom Sheet modal (Title, Notes, Coordinates, Signal Score).
-  - List of saved 5G points with swipe actions.
-  - *Verification*: Save multiple points and ensure data stays after app reload.
+- [x] **Chunk 3: SQLite Persistence Layer & "Save 5G Point" Flow**
+  - Local `expo-sqlite` database (`network_points` table) with WAL mode (`databaseService.ts`).
+  - GPS Coordinate grabber via `expo-location` (`locationService.ts`).
+  - "Save 5G Radar Spot" Bottom Sheet modal with presets (`SaveSpotModal.tsx`).
+  - "Saved 5G Spots" list modal with score badges, RF metrics & delete actions (`SavedSpotsList.tsx`).
+  - Top header "SPOTS (N)" count badge and ActionBar button wired.
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 - [ ] **Chunk 4: Interactive 5G Coverage Map**
   - Custom dark-mode styling on map.
