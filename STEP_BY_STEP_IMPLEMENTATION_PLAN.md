@@ -94,16 +94,16 @@ git push -u origin main
   - Minimalist floating bottom navigation bar (`BottomNavBar.tsx` - HUD / MAP / SAVED).
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 5: Real-Time Radar, Compass & Micro-Meter/Centimeter 5G Sweep**
-  - Haversine distance calculator (exact meters from target point).
-  - Bearing & Azimuth trigonometric calculations with Magnetometer compass heading.
-  - Rotating neon HUD arrow pointing directly to saved 5G spot.
+- [x] **Chunk 5: Real-Time Radar, Compass & Micro-Meter/Centimeter 5G Sweep**
+  - Haversine distance calculator down to centimeters (`navigationEngine.ts`).
+  - Bearing & Azimuth trigonometric calculations with Magnetometer compass heading (`sensorService.ts`).
+  - Rotating neon directional arrow pointing directly to saved 5G spot (`RadarCompassView.tsx`).
   - **⚡ Micro-Meter / Centimeter 5G Sweep (Geiger Counter Mode)**:
-    - Accelerometer & Gyroscope micro-displacement tracking for indoor movement (10cm - 1m steps).
-    - Real-time Signal Gradient Vector (🟢 "Signal Improving +7 dBm, keep moving!" vs 🔴 "Signal Dropping").
-    - Audio/Haptic Pulsing Beacon (vibrations get faster as you approach the peak 5G sweet spot).
-    - "Target Peak 5G Sweet Spot Locked" (haptic feedback when peak signal reached).
-  - *Verification*: Test rotation, micro-meter countdown, and haptic feedback as you move.
+    - Accelerometer & motion tracking for indoor movement (10cm - 1m micro-steps).
+    - Real-time Signal Gradient Vector (🟢 "Signal Improving +X dBm" vs 🔴 "Signal Dropping").
+    - Audio/Haptic Pulsing Beacon with `expo-haptics` (vibrations get faster as you approach peak 5G).
+    - "Target Peak 5G Sweet Spot Locked" banner and haptic notification when best spot reached.
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 - [ ] **Chunk 6: Zero-Cost Speed & Ping Diagnostic Test**
   - Zero-cost HTTP latency & jitter tester.

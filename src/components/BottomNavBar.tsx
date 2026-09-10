@@ -7,9 +7,9 @@
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { Gauge, Map, Bookmark } from 'lucide-react-native';
+import { Gauge, Navigation, Map, Bookmark } from 'lucide-react-native';
 
-export type AppTab = 'hud' | 'map' | 'spots';
+export type AppTab = 'hud' | 'radar' | 'map' | 'spots';
 
 interface BottomNavBarProps {
   // Currently active tab
@@ -28,39 +28,57 @@ export const BottomNavBar: React.FC<BottomNavBarProps> = ({
   return (
     <View style={styles.floatingContainer}>
       <View style={styles.navBar}>
-        {/* Tab 1: Live HUD Radar */}
+        {/* Tab 1: Live HUD Dashboard */}
         <TouchableOpacity
           style={[styles.tab, activeTab === 'hud' && styles.tabActive]}
           onPress={() => onSelectTab('hud')}
           activeOpacity={0.7}
         >
           <Gauge
-            size={18}
+            size={17}
             color={activeTab === 'hud' ? '#10B981' : '#64748B'}
             strokeWidth={activeTab === 'hud' ? 2.5 : 2}
           />
           <Text
             style={[styles.tabText, activeTab === 'hud' && styles.tabTextActive]}
           >
-            HUD RADAR
+            HUD
           </Text>
         </TouchableOpacity>
 
-        {/* Tab 2: Coverage Map */}
+        {/* Tab 2: Real-Time Radar Compass & Centimeter Sweep */}
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'radar' && styles.tabActive]}
+          onPress={() => onSelectTab('radar')}
+          activeOpacity={0.7}
+        >
+          <Navigation
+            size={17}
+            color={activeTab === 'radar' ? '#10B981' : '#64748B'}
+            strokeWidth={activeTab === 'radar' ? 2.5 : 2}
+          />
+          <Text
+            style={[styles.tabText, activeTab === 'radar' && styles.tabTextActive]}
+          >
+            RADAR
+          </Text>
+        </TouchableOpacity>
+
+        {/* Tab 3: Coverage Map */}
         <TouchableOpacity
           style={[styles.tab, activeTab === 'map' && styles.tabActive]}
           onPress={() => onSelectTab('map')}
           activeOpacity={0.7}
         >
           <Map
-            size={18}
+            size={17}
             color={activeTab === 'map' ? '#10B981' : '#64748B'}
             strokeWidth={activeTab === 'map' ? 2.5 : 2}
           />
           <Text
             style={[styles.tabText, activeTab === 'map' && styles.tabTextActive]}
           >
-            5G MAP
+            MAP
           </Text>
         </TouchableOpacity>
 

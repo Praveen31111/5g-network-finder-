@@ -54,6 +54,7 @@ import { ActionBar } from './src/components/ActionBar';
 import { SaveSpotModal } from './src/components/SaveSpotModal';
 import { SavedSpotsList } from './src/components/SavedSpotsList';
 import { CoverageMap } from './src/components/CoverageMap';
+import { RadarCompassView } from './src/components/RadarCompassView';
 import { BottomNavBar, AppTab } from './src/components/BottomNavBar';
 
 export default function App() {
@@ -80,6 +81,9 @@ export default function App() {
 
   // "Saved Spots" list drawer open/close state
   const [isSavedListOpen, setIsSavedListOpen] = useState<boolean>(false);
+
+  // Target 5G spot jise Compass Radar trace kar raha hai
+  const [selectedRadarTarget, setSelectedRadarTarget] = useState<NetworkPoint | null>(null);
 
   // SQLite database se saved points load karne ka function
   const loadSavedPoints = useCallback(async () => {
@@ -187,13 +191,10 @@ export default function App() {
     }
   };
 
-  // Map se radar navigation ke liye point select hone par (Chunk 5 integration)
+  // Map ya Saved List se radar navigation ke liye point select hone par
   const handleSelectTargetForRadar = (point: NetworkPoint) => {
-    Alert.alert(
-      'Target Spot Selected',
-      `"${point.title}" (${point.operator} • ${point.score}/100) select ho gaya hai!\n\nChunk 5 mein humara Real-Time Compass Arrow seedhe is spot ki taraf point karega!`
-    );
-    setActiveTab('hud');
+    setSelectedRadarTarget(point);
+    setActiveTab('radar');
   };
 
   // Jab tak initial telemetry data load nahi hota, sleek dark screen loader dikhate hain
@@ -326,6 +327,20 @@ export default function App() {
           </ScrollView>
         )}
 
+        {/* View 2: Real-Time Radar Compass & Centimeter Sweep */}
+        {activeTab === 'radar' && (
+          <View style={styles.radarContainer}>
+            <RadarCompassView
+              targetPoint={selectedRadarTarget}
+              savedPoints={savedPoints}
+              currentLocation={userLocation}
+              telemetry={telemetry}
+              onSelectTarget={(pt) => setSelectedRadarTarget(pt)}
+              onBackToDashboard={() => setActiveTab('hud')}
+            />
+          </View>
+        )}
+
         {/* View 2: Interactive 5G Coverage Map */}
         {activeTab === 'map' && (
           <View style={styles.mapContainer}>
@@ -399,6 +414,9 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   mapContainer: {
+    flex: 1,
+  },
+  radarContainer: {
     flex: 1,
   },
   sectionHeaderRow: {

@@ -12,6 +12,7 @@
   "dependencies": {
     "expo": "^57.0.21",
     "expo-asset": "~57.0.16",
+    "expo-haptics": "~57.0.2",
     "expo-location": "~57.0.16",
     "expo-network": "~57.0.1",
     "expo-sensors": "~57.0.2",
