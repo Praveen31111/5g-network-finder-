@@ -31,7 +31,9 @@
         {
           "locationAlwaysAndWhenInUsePermission": "Allow 5G Coverage Radar to access your location to find the nearest 5G signal points."
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-status-bar"
     ]
   }
 }
