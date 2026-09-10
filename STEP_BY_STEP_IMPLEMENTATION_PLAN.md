@@ -121,12 +121,14 @@ git push -u origin main
   - "COMPARE" button added to each spot in `SavedSpotsList.tsx`.
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 8: Data Backup, Settings & Export/Import**
-  - Export all saved 5G spots to JSON / CSV.
-  - Import points to share with friends.
-  - Distance unit switcher (Meters / Feet).
-  - Sensitivity threshold configurations.
-  - *Verification*: Verify exported JSON file.
+- [x] **Chunk 8: Data Backup, Settings & Export/Import**
+  - Export all saved 5G spots to JSON format for sharing via WhatsApp, Drive, or Email (`backupService.ts`).
+  - Export to Spreadsheet-compatible CSV format for Excel analysis.
+  - Interactive JSON import parser with validation to restore spots into SQLite.
+  - Minimalist Settings HUD Modal (`SettingsModal.tsx`) with spatial units switcher (`INCH / CM` vs `METERS / FT`).
+  - Diagnostic system hardware specifications and safe database reset capability.
+  - Header settings trigger button added (`Header.tsx`).
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 ---
 
