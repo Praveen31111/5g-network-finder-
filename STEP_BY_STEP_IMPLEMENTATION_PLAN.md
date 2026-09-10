@@ -86,20 +86,24 @@ git push -u origin main
   - Top header "SPOTS (N)" count badge and ActionBar button wired.
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 4: Interactive 5G Coverage Map**
-  - Custom dark-mode styling on map.
-  - Color-coded signal pins (🟢 Excellent 5G, 🟡 Moderate, 🔴 Weak).
-  - Detail popup with operator, score, and quick "Navigate" button.
-  - Filter chips (e.g., Filter by Jio / Airtel or High-Speed only).
-  - *Verification*: View saved markers on map and test filters.
+- [x] **Chunk 4: Interactive 5G Coverage Map**
+  - High-contrast obsidian dark theme JSON (`mapDarkStyle.ts`).
+  - Interactive MapView with custom color-coded 5G score pins (`CoverageMap.tsx`).
+  - Operator filter chips (ALL, Jio, Airtel, High-Speed ≥80).
+  - Floating detail card with 5G RF metrics, GPS coords, and "Track with Radar" CTA.
+  - Minimalist floating bottom navigation bar (`BottomNavBar.tsx` - HUD / MAP / SAVED).
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 5: Real-Time Radar & Compass Direction Finder**
+- [ ] **Chunk 5: Real-Time Radar, Compass & Micro-Meter/Centimeter 5G Sweep**
   - Haversine distance calculator (exact meters from target point).
-  - Bearing & Azimuth trigonometric calculations.
-  - Real-time phone Magnetometer compass heading.
+  - Bearing & Azimuth trigonometric calculations with Magnetometer compass heading.
   - Rotating neon HUD arrow pointing directly to saved 5G spot.
-  - "Target Spot Reached" (haptic / visual feedback when $\le 5\text{m}$).
-  - *Verification*: Test rotation and distance countdown as you move.
+  - **⚡ Micro-Meter / Centimeter 5G Sweep (Geiger Counter Mode)**:
+    - Accelerometer & Gyroscope micro-displacement tracking for indoor movement (10cm - 1m steps).
+    - Real-time Signal Gradient Vector (🟢 "Signal Improving +7 dBm, keep moving!" vs 🔴 "Signal Dropping").
+    - Audio/Haptic Pulsing Beacon (vibrations get faster as you approach the peak 5G sweet spot).
+    - "Target Peak 5G Sweet Spot Locked" (haptic feedback when peak signal reached).
+  - *Verification*: Test rotation, micro-meter countdown, and haptic feedback as you move.
 
 - [ ] **Chunk 6: Zero-Cost Speed & Ping Diagnostic Test**
   - Zero-cost HTTP latency & jitter tester.
