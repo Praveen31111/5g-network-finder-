@@ -7,7 +7,7 @@
 
 import React from 'react';
 import { StyleSheet, Text, View, TouchableOpacity } from 'react-native';
-import { Radio } from 'lucide-react-native';
+import { Radio, Settings } from 'lucide-react-native';
 
 interface HeaderProps {
   // Kya currently network scan/refresh chal raha hai
@@ -16,12 +16,15 @@ interface HeaderProps {
   savedCount?: number;
   // Open saved spots modal callback
   onOpenSaved?: () => void;
+  // Open settings modal callback
+  onOpenSettings?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   isScanning,
   savedCount = 0,
   onOpenSaved,
+  onOpenSettings,
 }) => {
   return (
     <View style={styles.container}>
@@ -38,7 +41,7 @@ export const Header: React.FC<HeaderProps> = ({
         </View>
       </View>
 
-      {/* Right side cluster: Live beacon + Saved Spots Button */}
+      {/* Right side cluster: Live beacon + Saved Spots Button + Settings */}
       <View style={styles.rightCluster}>
         {onOpenSaved && (
           <TouchableOpacity
@@ -61,6 +64,17 @@ export const Header: React.FC<HeaderProps> = ({
             {isScanning ? 'POLL' : 'LIVE'}
           </Text>
         </View>
+
+        {/* Settings button */}
+        {onOpenSettings && (
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={onOpenSettings}
+            activeOpacity={0.7}
+          >
+            <Settings size={15} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -163,5 +177,15 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '700',
     letterSpacing: 0.8,
+  },
+  settingsButton: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
   },
 });

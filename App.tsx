@@ -64,6 +64,7 @@ import { CoverageMap } from './src/components/CoverageMap';
 import { RadarCompassView } from './src/components/RadarCompassView';
 import { SpeedTestView } from './src/components/SpeedTestView';
 import { SpotComparisonModal } from './src/components/SpotComparisonModal';
+import { SettingsModal } from './src/components/SettingsModal';
 import { BottomNavBar, AppTab } from './src/components/BottomNavBar';
 
 export default function App() {
@@ -97,6 +98,10 @@ export default function App() {
   // Re-verification aur Historical Comparison modal state
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState<boolean>(false);
   const [comparisonSpot, setComparisonSpot] = useState<NetworkPoint | null>(null);
+
+  // Settings & Preferences modal state
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [distanceUnit, setDistanceUnit] = useState<'inches_cm' | 'metric'>('inches_cm');
 
   // Nearest spot detection (< 15 meters auto-arrival beacon)
   const nearbySpotInfo = React.useMemo(() => {
@@ -306,11 +311,12 @@ export default function App() {
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
-            {/* Header Bar with live beacon & saved spots count button */}
+            {/* Header Bar with live beacon, saved count, and settings button */}
             <Header
               isScanning={isScanning}
               savedCount={savedPoints.length}
               onOpenSaved={() => setIsSavedListOpen(true)}
+              onOpenSettings={() => setIsSettingsOpen(true)}
             />
 
             {/* Modern Segmented Operator Selector */}
@@ -484,6 +490,16 @@ export default function App() {
           telemetry={telemetry}
           onClose={() => setIsSaveModalOpen(false)}
           onSave={handleConfirmSave}
+        />
+
+        {/* Settings & Data Backup/Restore Modal */}
+        <SettingsModal
+          visible={isSettingsOpen}
+          savedPoints={savedPoints}
+          onClose={() => setIsSettingsOpen(false)}
+          onRefreshPoints={loadSavedPoints}
+          distanceUnit={distanceUnit}
+          onToggleDistanceUnit={(mode) => setDistanceUnit(mode)}
         />
 
         {/* Ergonomic Floating Bottom Navigation Bar */}

@@ -232,3 +232,12 @@ export async function fetchBest5GPoint(): Promise<NetworkPoint | null> {
   };
 }
 
+/**
+ * Saare saved network points ko delete karke database clear karta hai
+ */
+export async function clearAllNetworkPoints(): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync(`DELETE FROM network_points;`);
+}
+
+
