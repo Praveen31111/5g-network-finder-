@@ -69,12 +69,14 @@ git push -u origin main
   - Cross-platform 5G Telemetry Provider (Expo Go live sensor & diagnostic mode + Native bridge config).
   - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
-- [ ] **Chunk 2: Futuristic Dark-Mode HUD Dashboard**
-  - Neon radial circular 5G health gauge (Green / Yellow / Orange / Red).
-  - Live Operator Badge (Jio True 5G / Airtel 5G Plus).
-  - Real-time technical readout cards (RSRP dBm, SINR dB, Latency ms).
-  - Real-time auto-polling hook.
-  - *Verification*: Run `npx expo start` and preview HUD on phone in Expo Go.
+- [x] **Chunk 2: Minimalist Modern HUD Dashboard (Senior Designer Polish)**
+  - Precision SVG circular 5G health gauge with dynamic multi-color arc (`ScoreGauge.tsx`).
+  - Seamless iOS-style segmented operator switcher with SA/NSA badge (`OperatorSelector.tsx`).
+  - 2x2 Precision radio cards with linear micro-progress tracks for RSRP, SINR, RSRQ, and Latency (`MetricCard.tsx`).
+  - Radio hardware ribbon displaying Frequency Band n78, Cell ID (PCI), and 5G SA Core (`HardwareStrip.tsx`).
+  - Minimalist top bar with live emerald beacon pulse (`Header.tsx`).
+  - Bottom thumb-friendly action bar (`ActionBar.tsx`).
+  - *Verification*: Terminal typecheck (`npx tsc --noEmit`) PASSED with 0 errors!
 
 - [ ] **Chunk 3: SQLite Persistence Layer & "Save 5G Point" Flow**
   - Local `expo-sqlite` database (`network_points` table).
